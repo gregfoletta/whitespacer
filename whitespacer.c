@@ -3,14 +3,14 @@
 #include <unistd.h>
 #include <string.h>
 
-#define READ_BUFFER 128
+#define READ_BUFFER 2048
 #define OUTPUT_BUFFER READ_BUFFER * 4
 
 #define STDIN 0
 #define STDOUT 1
 
 //Quaternary translation - these need to be contiguous characters.
-char ws_lookup[] = {'\t', '\n', '\v', '\f'};
+char ws_lookup[] = {'\b', '\t', '\n', '\v'};
 
 //Encode each 2 bits of the byte into whitespace
 int ws_encode(unsigned char *bytes_in, unsigned char *ws_out, ssize_t bytes) {
@@ -60,6 +60,8 @@ int main(int argc, char **argv) {
             }
 
             ws_decode(bytes_in, bytes_out, total_bytes_read);
+
+            //Modulo above ensures bytes read is divisible by 4
             write(STDOUT, bytes_out, bytes_read / 4);
 
         } else {
