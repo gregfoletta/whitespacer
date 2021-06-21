@@ -17,10 +17,10 @@ int ws_encode(unsigned char *bytes_in, unsigned char *ws_out, ssize_t bytes) {
     int x;
 
     for (x = 0; x < bytes; x++) {
-        *ws_out++ = ws_lookup[ bytes_in[x] & 0x03 ];
-        *ws_out++ = ws_lookup[ bytes_in[x] >> 2 & 0x03 ];
-        *ws_out++ = ws_lookup[ bytes_in[x] >> 4 & 0x03 ];
-        *ws_out++ = ws_lookup[ bytes_in[x] >> 6 & 0x03 ];
+        *ws_out++ = (bytes_in[x] & 0x03) + ws_lookup[0];
+        *ws_out++ = (bytes_in[x] >> 2 & 0x03) + ws_lookup[0];
+        *ws_out++ = (bytes_in[x] >> 4 & 0x03) + ws_lookup[0];
+        *ws_out++ = (bytes_in[x] >> 6 & 0x03) + ws_lookup[0];
     }
 
     return x * 4;
