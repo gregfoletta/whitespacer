@@ -62,14 +62,16 @@ int main(int argc, char **argv) {
             }
 
             num_bytes_write = ws_decode(bytes_in, bytes_out, total_bytes_read);
-        } else {
-            num_bytes_write = ws_encode(bytes_in, bytes_out, total_bytes_read);
+
             if (!num_bytes_write) {
-                fprintf(stderr, "- Encoding error, likely invalid byte");
+                fprintf(stderr, "- Decoding error, likely invalid byte\n");
                 ret = -1;
                 goto out;
             }
+        } else {
+            num_bytes_write = ws_encode(bytes_in, bytes_out, total_bytes_read);
         }
+
 
         //Write out to stdout
         if ( write(STDOUT, bytes_out, num_bytes_write) < 0 ) {
