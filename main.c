@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
 
     bytes_in = malloc(READ_BUFFER * sizeof(*bytes_in));
-    bytes_out = malloc(OUTPUT_BUFFER * sizeof(*bytes_in));
+    bytes_out = malloc(OUTPUT_BUFFER * sizeof(*bytes_out));
 
     if (!bytes_in || !bytes_out) {
         fprintf(stderr, "- Could not allocate memory for input/output\n");
