@@ -28,7 +28,6 @@ void alloc_decode_lookup_tbl(void) {
 //Encode each 2 bits of the byte into whitespace
 ssize_t ws_encode(const unsigned char *bytes_in, unsigned char *ws_out, const ssize_t bytes) {
     int x, y;
-    unsigned char whitespace;
 
     for (x = 0; x < bytes; x++) {
         for (y = 0; y < 4; y++) {
