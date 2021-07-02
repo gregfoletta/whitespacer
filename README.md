@@ -52,6 +52,10 @@ md5sum urandom*
 5d0d602a93ae0a0ba1b53f8f391ae7fd  urandom.trans
 ```
 
+And here's what it looks like in Wireshark sending some encoded bytes through a TCP session:
+
+![Wireshark TCP Follow](tcp_follow.png)
+
 # How Performant?
 
 It's not too bad: on my Intel i7-8650U laptop, running over a file that's cached in memory and outputting to /dev/null, the encoding / decoding process runs at 258MiB/s.
