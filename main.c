@@ -13,12 +13,9 @@
 #define STDOUT 1
 
 
-int is_decoder(int argc, char **argv) {
+bool is_decoder(int argc, char **argv) {
     //Even with one argument we've still got two characters (char + NUL)
-    if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'd')
-        return 1;
-
-    return 0;
+    return argc > 1 && argv[1][0] == '-' && argv[1][1] == 'd';
 }
 
             
@@ -27,7 +24,7 @@ int main(int argc, char **argv) {
     unsigned char *bytes_in, *bytes_out;
     int ret;
 
-    int decoding = is_decoder(argc, argv);
+    bool decoding = is_decoder(argc, argv);
 
     alloc_decode_lookup_tbl();
 
