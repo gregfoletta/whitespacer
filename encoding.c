@@ -24,9 +24,52 @@ void alloc_decode_lookup_tbl(void) {
     }
 }
 
+unsigned char lookup_encode(const unsigned char dibit) {
+    return encode_lookup_tbl[ dibit ];
+}
+
+unsigned char poly_encode(const unsigned char dibit) {
+    return 9.0 + 4.666667 * dibit - 6.0 * (dibit * dibit) + 2.333333333333 * (dibit * dibit * dibit);
+}
+
+unsigned char switch_encode(const unsigned char dibit) {
+    switch (dibit) {
+        case 0:
+            return '\t';
+        case 1:
+            return '\n';
+        case 2:
+            return '\r';
+        case 3:
+            return ' ';
+    }
+}
+
+unsigned char lookup_decode(const unsigned char ws) {
+    return decode_lookup_tbl[ ws ];
+}
+
+unsigned char poly_decode(const unsigned char ws) {
+    return -31.82920741111 + 6.42174606666 * ws + -0.3807988444 * (ws * ws) + 0.00669163333 * (ws * ws * ws);
+}
+
+unsigned char switch_decode(const unsigned char ws) {
+    switch (ws) {
+        case '\t':
+            return 0;
+        case '\n':
+            return 1;
+        case '\r':
+            return 2;
+        case ' ':
+            return 3;
+    }
+
+    return LOOKUP_CANARY;
+}
 
 //Encode each 2 bits of the byte into whitespace
-ssize_t ws_encode(const unsigned char *bytes_in, unsigned char *ws_out, const ssize_t bytes) {
+ssize_t ws_encode(const unsigned char *bytes_in, unsigned char *ws_out, const ssize_t bytes, unsigned char (*encoder)(unsigned char)) {
     int x, y;
 
     for (x = 0; x < bytes; x++) {
@@ -34,15 +77,17 @@ ssize_t ws_encode(const unsigned char *bytes_in, unsigned char *ws_out, const ss
             //For each two bits in the byte, look up its value (0 to 3) in the
             //lookup table and add it to the outbound whitespace buffer, taking into
             //account that each inbound byte becomes four outbound bytes
-            ws_out[(4 * x) + y] = encode_lookup_tbl[ (bytes_in[x] >> (2 * y)) & 0x03 ];
+            ws_out[(4 * x) + y] = encoder( (bytes_in[x] >> (2 * y)) & 0x03 );
         }
     }
 
     return x * 4;
 }
 
+
+
 //Decode each group of four bytes back into a single byte.
-ssize_t ws_decode(const unsigned char *ws_in, unsigned char *bytes_out, const ssize_t bytes_read) {
+ssize_t ws_decode(const unsigned char *ws_in, unsigned char *bytes_out, const ssize_t bytes_read, unsigned char (*decoder)(unsigned char)) {
     int x, y;
     unsigned char dibit;
 
@@ -53,7 +98,8 @@ ssize_t ws_decode(const unsigned char *ws_in, unsigned char *bytes_out, const ss
         for (y = 0; y < 4; y++) {
             //Pull each of the two bits of our outbound byte from
             //four of the inbound bytes.
-            dibit = decode_lookup_tbl[ ws_in[x + y] ];
+            unsigned char whitespace = ws_in[x + y];
+            dibit = decoder(whitespace);
 
             //Ensure our inbound whitespace byte is
             //valid for our encoding
@@ -70,3 +116,5 @@ ssize_t ws_decode(const unsigned char *ws_in, unsigned char *bytes_out, const ss
     
     return x / 4;
 }
+
+
