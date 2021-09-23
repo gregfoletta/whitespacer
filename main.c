@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "include/encoding.h"
 
@@ -12,22 +13,82 @@
 #define STDIN 0
 #define STDOUT 1
 
+struct cmdline_opts {
+    int decoding;
+    unsigned char (*encode_func)(unsigned char);
+    unsigned char (*decode_func)(unsigned char);
+};
 
-int is_decoder(int argc, char **argv) {
-    //Even with one argument we've still got two characters (char + NUL)
-    if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'd')
-        return 1;
 
-    return 0;
+struct encode_decode_algos {
+    char *cmdline_arg;
+    char *name;
+    unsigned char (*encode_func)(unsigned char);
+    unsigned char (*decode_func)(unsigned char);
+};
+
+struct cmdline_opts *parse_cmdline(int argc, char **argv) {
+    struct cmdline_opts *opts;
+    int opt;
+
+    struct encode_decode_algos algos[] = {
+        { 
+            .cmdline_arg = "lookup",
+            .encode_func = lookup_encode,
+            .decode_func = lookup_decode
+
+        },
+        { 
+            .cmdline_arg = "poly",
+            .encode_func = poly_encode,
+            .decode_func = poly_decode
+        },
+        { 
+            .cmdline_arg = "switch",
+            .encode_func = switch_encode,
+            .decode_func = switch_decode
+        }
+    };
+    
+    int num_algos = sizeof(algos) / sizeof(struct encode_decode_algos);
+
+
+    //Allocate and set default values
+    opts = malloc(sizeof(*opts));
+    opts->decoding = 0;
+    opts->encode_func = lookup_encode;
+    opts->decode_func = lookup_decode;
+
+    //Command line options
+    while ((opt = getopt(argc, argv, "da:")) != -1) {
+        switch (opt) {
+        case 'd':
+            opts->decoding = 1;
+            break;
+        case 'a':
+            for (int x = 0; x < num_algos; x++) {
+                if (!strcmp(optarg, algos[x].cmdline_arg)) {
+                    opts->encode_func = algos[x].encode_func;
+                    opts->decode_func = algos[x].decode_func;
+                    break;
+                }
+            }
+        }
+    }
+
+    return opts;
 }
 
-            
+
+
 int main(int argc, char **argv) {
     ssize_t bytes_read = 0, total_bytes_read = 0, num_bytes_write = 0;
     unsigned char *bytes_in, *bytes_out;
+    struct cmdline_opts *opts;
     int ret;
 
-    int decoding = is_decoder(argc, argv);
+    opts = parse_cmdline(argc, argv);
+
 
     alloc_decode_lookup_tbl();
 
@@ -52,16 +113,15 @@ int main(int argc, char **argv) {
 
         total_bytes_read += bytes_read;
 
-        if (decoding) {
+        if (opts->decoding) {
             //If decoding we need a multiple of four bytes.
             if (!total_bytes_read & 4) {
-                fprintf(stderr, "%ld\n", total_bytes_read);
-                //Move our buffer along
+                //Move our buffer along and continue reading.
                 buffer_pos += bytes_read;
                 continue;
             }
 
-            num_bytes_write = ws_decode(bytes_in, bytes_out, total_bytes_read);
+            num_bytes_write = ws_decode(bytes_in, bytes_out, total_bytes_read, opts->decode_func);
 
             if (!num_bytes_write) {
                 fprintf(stderr, "- Decoding error, likely invalid byte\n");
@@ -69,7 +129,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
         } else {
-            num_bytes_write = ws_encode(bytes_in, bytes_out, total_bytes_read);
+            num_bytes_write = ws_encode(bytes_in, bytes_out, total_bytes_read, opts->encode_func);
         }
 
 
@@ -95,6 +155,7 @@ int main(int argc, char **argv) {
     ret = 0;
 
 out:
+    free(opts);
     free(bytes_in);
     free(bytes_out);
     return ret;
